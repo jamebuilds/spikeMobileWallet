@@ -68,6 +68,62 @@ object TestCredentials {
         )
     }
 
+    fun createTestEmployeeCredential(holderKeyAlias: String): StoredCredential {
+        val id = UUID.randomUUID().toString()
+        val now = System.currentTimeMillis() / 1000
+
+        val payload = buildJsonObject {
+            put("iss", "https://accredify.example.com")
+            put("iat", now)
+            put("exp", now + 365 * 24 * 3600)
+            put("vct", "AccredifyEmployeePass")
+            put("_sd_alg", "sha-256")
+            put("_sd", JsonArray(listOf(
+                JsonPrimitive("placeholder_hash_1"),
+                JsonPrimitive("placeholder_hash_2"),
+                JsonPrimitive("placeholder_hash_3"),
+                JsonPrimitive("placeholder_hash_4"),
+                JsonPrimitive("placeholder_hash_5")
+            )))
+        }
+
+        val disclosures = listOf(
+            makeDisclosure("employeeId", "EMP-2024-001"),
+            makeDisclosure("firstName", "John"),
+            makeDisclosure("lastName", "Doe"),
+            makeDisclosure("dateOfBirth", "1990-01-15"),
+            makeDisclosure("nric", "S1234567A"),
+        )
+
+        val header = base64url("""{"alg":"ES256","typ":"vc+sd-jwt"}""")
+        val payloadEncoded = base64url(payload.toString())
+        val signature = base64url("test-signature-not-valid")
+        val issuerJwt = "$header.$payloadEncoded.$signature"
+
+        val rawSdJwt = issuerJwt + "~" + disclosures.joinToString("~") { it.first } + "~"
+
+        val claims = buildJsonObject {
+            put("employeeId", "EMP-2024-001")
+            put("firstName", "John")
+            put("lastName", "Doe")
+            put("dateOfBirth", "1990-01-15")
+            put("nric", "S1234567A")
+        }
+
+        return StoredCredential(
+            id = id,
+            rawSdJwt = rawSdJwt,
+            vct = "AccredifyEmployeePass",
+            issuer = "https://accredify.example.com",
+            issuedAt = now,
+            expiresAt = now + 365 * 24 * 3600,
+            claimsJson = claims.toString(),
+            displayName = "Accredify Employee Pass",
+            issuerDisplayName = "Accredify",
+            holderKeyAlias = holderKeyAlias
+        )
+    }
+
     /** Returns Pair(base64url-encoded-disclosure, raw-json) */
     private fun makeDisclosure(claimName: String, claimValue: String): Pair<String, String> {
         val salt = UUID.randomUUID().toString().take(8)

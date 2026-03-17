@@ -1,3 +1,5 @@
+@file:OptIn(androidx.credentials.ExperimentalDigitalCredentialApi::class)
+
 package com.example.spikemobilewallet.data
 
 import android.content.Context
@@ -10,6 +12,7 @@ import androidx.credentials.registry.digitalcredentials.openid4vp.OpenId4VpRegis
 import androidx.credentials.registry.digitalcredentials.sdjwt.SdJwtClaim
 import androidx.credentials.registry.digitalcredentials.sdjwt.SdJwtEntry
 import androidx.credentials.registry.provider.RegistryManager
+import androidx.credentials.registry.provider.digitalcredentials.DigitalCredentialRegistry
 import androidx.credentials.registry.provider.digitalcredentials.VerificationEntryDisplayProperties
 import androidx.credentials.registry.provider.digitalcredentials.VerificationFieldDisplayProperties
 import kotlinx.serialization.json.Json
@@ -26,14 +29,39 @@ object CredentialRegistryHelper {
         val registryManager = RegistryManager.create(context)
         val entries = credentials.map { it.toSdJwtEntry() }
 
+        // Build the registry using OpenId4VpRegistry to get the credential bytes
         val registry = OpenId4VpRegistry(
             credentialEntries = entries,
             id = "spike-wallet-registry-v1"
         )
 
+        // Debug: log the entries
+        for (entry in entries) {
+            Log.d(TAG, "Entry id=${entry.id}, vct=${(entry as SdJwtEntry).verifiableCredentialType}, claims=${entry.claims.size}")
+            entry.claims.forEach { claim ->
+                Log.d(TAG, "  claim path=${claim.path}, value=${claim.value}, disclosable=${claim.isSelectivelyDisclosable}")
+            }
+        }
+
+        // Try registering with the default matcher first, then custom
         try {
+            // Use the library's OpenId4VpRegistry directly (includes DEFAULT_MATCHER)
             registryManager.registerCredentials(registry)
-            Log.i(TAG, "Registered ${entries.size} credential(s) with CredentialManager")
+            Log.i(TAG, "Registered ${entries.size} credential(s) with DEFAULT matcher")
+        } catch (e: Exception) {
+            Log.e(TAG, "DEFAULT matcher registration failed", e)
+        }
+
+        // Also register with the CMWallet openid4vp1_0 matcher under a different ID
+        val matcher = context.assets.open("openid4vp1_0.wasm").readBytes()
+        Log.d(TAG, "Loaded WASM matcher: ${matcher.size} bytes")
+        try {
+            registryManager.registerCredentials(object : DigitalCredentialRegistry(
+                id = "spike-wallet-registry-v1-alt",
+                credentials = registry.credentials,
+                matcher = matcher
+            ) {})
+            Log.i(TAG, "Registered ${entries.size} credential(s) with CMWallet matcher")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to register credentials", e)
         }
@@ -82,7 +110,7 @@ object CredentialRegistryHelper {
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint().apply {
-            color = Color.parseColor("#6750A4") // Material You purple
+            color = Color.parseColor("#6750A4")
             style = Paint.Style.FILL
         }
         canvas.drawRoundRect(0f, 0f, size.toFloat(), size.toFloat(), 8f, 8f, paint)

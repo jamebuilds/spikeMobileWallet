@@ -43,13 +43,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Seed test credential if DB is empty, then register with Credential Manager
+        // Seed test credentials if DB is empty, then register with Credential Manager
         lifecycleScope.launch {
             val existing = db.credentialDao().getAll().first()
             if (existing.isEmpty()) {
                 val holderKeyAlias = HolderKeyManager.generateHolderKey()
-                val testCred = TestCredentials.createTestAgeCredential(holderKeyAlias)
-                db.credentialDao().insert(testCred)
+                db.credentialDao().insert(TestCredentials.createTestAgeCredential(holderKeyAlias))
+
+                val employeeKeyAlias = HolderKeyManager.generateHolderKey()
+                db.credentialDao().insert(TestCredentials.createTestEmployeeCredential(employeeKeyAlias))
             }
 
             // Register all credentials so Chrome can discover this wallet

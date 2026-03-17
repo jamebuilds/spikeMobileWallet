@@ -12,21 +12,16 @@ import androidx.credentials.GetCredentialResponse
 import androidx.credentials.GetDigitalCredentialOption
 import androidx.credentials.exceptions.GetCredentialUnknownException
 import androidx.credentials.provider.PendingIntentHandler
+import androidx.credentials.registry.provider.selectedCredentialSet
 import androidx.credentials.registry.provider.selectedEntryId
 import com.example.spikemobilewallet.data.StoredCredential
 import com.example.spikemobilewallet.data.WalletDatabase
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 private const val TAG = "GetCredentialActivity"
 
-/**
- * Launched by Credential Manager when the user selects a credential from this wallet.
- * Handles the OpenID4VP request and returns the SD-JWT credential response.
- */
 class GetCredentialActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,11 +36,18 @@ class GetCredentialActivity : ComponentActivity() {
                 return
             }
 
-            // Get the selected credential ID
+            // Try both APIs to get the selected credential ID
             val selectedId = request.selectedEntryId
-            Log.i(TAG, "Selected credential ID: $selectedId")
+                ?: request.selectedCredentialSet?.credentials?.firstOrNull()?.credentialId
 
-            // Find the credential in our database
+            Log.i(TAG, "Selected credential ID: $selectedId")
+            Log.i(TAG, "selectedEntryId: ${request.selectedEntryId}")
+            Log.i(TAG, "selectedCredentialSet: ${request.selectedCredentialSet}")
+            Log.i(TAG, "sourceBundle keys: ${request.sourceBundle?.keySet()}")
+            request.sourceBundle?.keySet()?.forEach { key ->
+                Log.i(TAG, "  bundle[$key] = ${request.sourceBundle?.get(key)}")
+            }
+
             val credential = selectedId?.let {
                 runBlocking {
                     WalletDatabase.getInstance(this@GetCredentialActivity)
@@ -78,8 +80,6 @@ class GetCredentialActivity : ComponentActivity() {
     }
 
     private fun handleDigitalCredentialRequest(requestJson: String, credential: StoredCredential) {
-        // Build the OpenID4VP response containing the SD-JWT
-        // For now, return the raw SD-JWT as the vp_token
         val responseJson = buildJsonObject {
             put("vp_token", credential.rawSdJwt)
         }.toString()
