@@ -8,6 +8,7 @@ lifecycleRuntimeKtx = "2.6.1"
 activityCompose = "1.8.0"
 kotlin = "2.2.10"
 composeBom = "2024.09.00"
+credentials = "1.5.0"
 credentialRegistry = "1.0.0-alpha04"
 biometric = "1.2.0-alpha05"
 nimbusJoseJwt = "9.37.3"
@@ -31,6 +32,8 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+# Credential Manager
+androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
 # Credential Manager Registry
 credentials-registry-sdjwtvc = { group = "androidx.credentials.registry", name = "registry-digitalcredentials-sdjwtvc", version.ref = "credentialRegistry" }
 credentials-registry-openid = { group = "androidx.credentials.registry", name = "registry-digitalcredentials-openid", version.ref = "credentialRegistry" }

@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import com.example.spikemobilewallet.data.CredentialRegistryHelper
 import com.example.spikemobilewallet.data.HolderKeyManager
 import com.example.spikemobilewallet.data.StoredCredential
 import com.example.spikemobilewallet.data.TestCredentials
@@ -42,7 +43,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Seed test credential if DB is empty
+        // Seed test credential if DB is empty, then register with Credential Manager
         lifecycleScope.launch {
             val existing = db.credentialDao().getAll().first()
             if (existing.isEmpty()) {
@@ -50,6 +51,10 @@ class MainActivity : ComponentActivity() {
                 val testCred = TestCredentials.createTestAgeCredential(holderKeyAlias)
                 db.credentialDao().insert(testCred)
             }
+
+            // Register all credentials so Chrome can discover this wallet
+            val allCredentials = db.credentialDao().getAll().first()
+            CredentialRegistryHelper.registerAll(this@MainActivity, allCredentials)
         }
 
         setContent {

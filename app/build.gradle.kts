@@ -53,6 +53,9 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.navigation.compose)
 
+    // Credential Manager
+    implementation(libs.androidx.credentials)
+
     // Credential Manager Registry
     implementation(libs.credentials.registry.sdjwtvc)
     implementation(libs.credentials.registry.openid)
